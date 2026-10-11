@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#b45309">
+<title>感官评价线上评分</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <div class="brand-mark">评</div>
+      <div class="brand-text">
+        <div class="brand-title" id="brandTitle">感官评价线上评分</div>
+        <div class="brand-sub" id="brandSub">Sensory Evaluation System</div>
+      </div>
+    </div>
+    <div class="spacer"></div>
+    <div id="userBox" class="hidden" style="display:flex;align-items:center;gap:10px">
+      <span class="badge badge-muted" id="userBadge">—</span>
+      <button class="btn btn-sm btn-ghost" id="btnLogout">退出</button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap" id="main">
+
+  <!-- ================= 加载中 ================= -->
+  <div id="view-loading" class="loading">
+    <div class="spinner"></div>
+    正在加载评价系统…
+  </div>
+
+  <!-- ================= 登录 ================= -->
+  <div id="view-login" class="hidden">
+    <div class="hero">
+      <div class="hero-badge">感官评价 · 线上评分</div>
+      <h1 id="heroTitle">感官评价线上评分系统</h1>
+      <p id="heroDesc">请填写您的评价员编号进入评分。评分全程盲评，样品以随机三位数编号呈现。</p>
+    </div>
+
+    <div class="wrap-narrow" style="margin:0 auto;padding:0">
+      <div class="card card-lg">
+        <h2 class="card-title">评价员登录</h2>
+        <p class="card-desc">编号由组织者统一分配，请如实填写以便核对数据。</p>
+
+        <div id="loginAlert"></div>
+
+        <label class="field">
+          <span class="field-label">评价员编号 <span style="color:var(--danger)">*</span></span>
+          <input class="input" id="inputCode" placeholder="例如 01、A03" autocomplete="off" maxlength="40">
+        </label>
+
+        <label class="field">
+          <span class="field-label">姓名（选填）</span>
+          <input class="input" id="inputName" placeholder="用于结果核对，可留空" autocomplete="off" maxlength="30">
+        </label>
+
+        <button class="btn btn-primary btn-block" id="btnLogin">进入评价</button>
+
+        <p class="hint" style="margin-top:14px;text-align:center">
+          进入即表示您已了解本次评价的性质与要求
+        </p>
+      </div>
+
+      <p class="footer-note">
+        <a href="/admin">组织者 / 管理端入口</a>
+      </p>
+    </div>
+  </div>
+
+  <!-- ================= 知情同意 ================= -->
+  <div id="view-consent" class="hidden">
+    <div class="wrap-narrow" style="margin:0 auto;padding:0">
+      <div class="card card-lg">
+        <h2 class="card-title" id="consentTitle">知情同意书</h2>
+        <p class="card-desc">请在开始评价前仔细阅读以下全部内容。</p>
+
+        <div class="consent-body" id="consentBody"></div>
+
+        <div class="section-label">签署确认</div>
+        <div id="declarations"></div>
+
+        <label class="field" style="margin-top:18px">
+          <span class="field-label">评价员签名（正楷）<span style="color:var(--danger)">*</span></span>
+          <input class="input" id="inputSignature" placeholder="请输入您的姓名作为电子签名" autocomplete="off" maxlength="30">
+        </label>
+
+        <div id="consentAlert"></div>
+
+        <button class="btn btn-primary btn-block" id="btnConsent" disabled>同意并开始评价</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 评分 ================= -->
+  <div id="view-score" class="hidden">
+    <div class="sticky-progress">
+      <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+      <div class="chips" id="chips"></div>
+    </div>
+
+    <div id="noticeBox"></div>
+
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <div>
+          <div style="font-size:12.5px;color:var(--muted);font-weight:600;letter-spacing:.06em">当前评价样品</div>
+          <div style="font-size:32px;font-weight:750;letter-spacing:1px;font-variant-numeric:tabular-nums" id="curSample">—</div>
+        </div>
+        <div style="margin-left:auto;text-align:right" id="sampleNoteBox"></div>
+      </div>
+    </div>
+
+    <div id="criteriaBox"></div>
+
+    <div class="card">
+      <label class="field" style="margin:0">
+        <span class="field-label">备注（选填）</span>
+        <textarea class="textarea" id="inputNote" placeholder="如有异常情况（如发现异物、霉变、气味异常等）请在此说明" maxlength="500"></textarea>
+      </label>
+    </div>
+
+    <div class="total-bar">
+      <div>
+        <div class="total-label">本样品总分</div>
+        <div class="total-value"><span id="totalScore">0</span><small> / <span id="totalMax">100</span> 分</small></div>
+      </div>
+      <div class="total-actions">
+        <button class="btn" id="btnPrev">上一个</button>
+        <button class="btn btn-primary" id="btnSaveNext">保存并下一个</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 完成 ================= -->
+  <div id="view-done" class="hidden">
+    <div class="wrap-narrow" style="margin:0 auto;padding:0">
+      <div class="card card-lg">
+        <div class="done-hero">
+          <div class="done-icon">✓</div>
+          <h2 id="doneTitle">评分已提交，感谢您的参与！</h2>
+          <p id="doneDesc">您的评分数据已记录，请勿与他人讨论评分内容。</p>
+        </div>
+
+        <div class="table-wrap" style="margin-top:6px">
+          <table>
+            <thead>
+              <tr>
+                <th>样品编号</th>
+                <th class="num">总分</th>
+                <th>状态</th>
+              </tr>
+            </thead>
+            <tbody id="doneTable"></tbody>
+          </table>
+        </div>
+
+        <p class="hint" style="text-align:center;margin-top:18px" id="doneFooter"></p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+<div id="modalRoot"></div>
+
+<script src="/js/app.js"></script>
+</body>
+</html>

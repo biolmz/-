@@ -1,0 +1,22 @@
+[Unit]
+Description=Sensory Evaluation Scoring System
+Documentation=file:///opt/sensory-eval/README.md
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/opt/sensory-eval
+ExecStart=/usr/bin/node /opt/sensory-eval/server.js
+Environment=NODE_ENV=production
+Environment=PORT=8200
+Environment=HOST=0.0.0.0
+# 建议取消注释并设置强密码，避免使用默认密码 admin123
+# Environment=ADMIN_PASSWORD=change-me-please
+Restart=always
+RestartSec=3
+StandardOutput=append:/var/log/sensory-eval.log
+StandardError=append:/var/log/sensory-eval.err.log
+
+[Install]
+WantedBy=multi-user.target

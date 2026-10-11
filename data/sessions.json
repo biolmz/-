@@ -1,0 +1,27 @@
+[
+  {
+    "id": "ss_mus249sgf65751e8",
+    "name": "第 1 次评价",
+    "status": "open",
+    "createdAt": "2026-10-03T07:14:51.665Z",
+    "closedAt": null,
+    "samples": [
+      {
+        "code": "137",
+        "note": "",
+        "createdAt": "2026-10-03T07:14:51.663Z"
+      },
+      {
+        "code": "462",
+        "note": "",
+        "createdAt": "2026-10-03T07:14:51.664Z"
+      },
+      {
+        "code": "805",
+        "note": "",
+        "createdAt": "2026-10-03T07:14:51.664Z"
+      }
+    ],
+    "evaluators": []
+  }
+]

@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#b45309">
+<title>管理端 · 感官评价线上评分</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <div class="brand-mark">评</div>
+      <div class="brand-text">
+        <div class="brand-title" id="brandTitle">感官评价 · 管理端</div>
+        <div class="brand-sub" id="brandSub">Sensory Evaluation Admin</div>
+      </div>
+    </div>
+    <div class="spacer"></div>
+    <div id="adminBox" class="hidden" style="display:flex;align-items:center;gap:10px">
+      <button class="btn btn-sm" id="btnRefresh">刷新</button>
+      <button class="btn btn-sm btn-ghost" id="btnLogout">退出</button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- 登录 -->
+  <div id="view-login" class="hidden">
+    <div class="wrap-narrow" style="margin:0 auto;padding:0">
+      <div class="hero" style="padding:44px 0 22px">
+        <div class="hero-badge">组织者入口</div>
+        <h1>管理后台</h1>
+        <p>开放/关闭评分、新建场次、查看统计并导出原始数据。</p>
+      </div>
+      <div class="card card-lg">
+        <div id="loginAlert"></div>
+        <label class="field">
+          <span class="field-label">管理密码</span>
+          <input class="input" id="inputPwd" type="password" placeholder="请输入管理密码" autocomplete="current-password">
+        </label>
+        <button class="btn btn-primary btn-block" id="btnLogin">登录</button>
+        <p class="hint" style="margin-top:14px;text-align:center">
+          默认密码 admin123，首次登录后请在「系统设置」中修改
+        </p>
+      </div>
+      <p class="footer-note"><a href="/">← 返回评价员端</a></p>
+    </div>
+  </div>
+
+  <!-- 主面板 -->
+  <div id="view-main" class="hidden">
+
+    <!-- 场次栏 -->
+    <div class="session-bar">
+      <div class="session-left">
+        <span class="session-label">评价场次</span>
+        <select class="input session-select" id="sessionSelect"></select>
+        <span class="badge badge-ok" id="sessionStatusBadge">开放中</span>
+      </div>
+      <div class="btn-row session-actions">
+        <button class="btn btn-sm btn-primary" id="btnNewSession">＋ 新建下次评分</button>
+        <button class="btn btn-sm" id="btnToggleSession">关闭本次评分</button>
+        <button class="btn btn-sm btn-ghost" id="btnRenameSession">重命名</button>
+        <button class="btn btn-sm btn-ghost" id="btnDeleteSession" style="color:var(--danger)">删除场次</button>
+      </div>
+    </div>
+    <div id="readonlyBanner"></div>
+
+    <div class="tabs" id="tabs">
+      <button class="tab active" data-tab="overview">概览</button>
+      <button class="tab" data-tab="stats">统计分析</button>
+      <button class="tab" data-tab="analysis">数据分析 · ANOVA</button>
+      <button class="tab" data-tab="records">原始记录</button>
+      <button class="tab" data-tab="people">样品与评价员</button>
+      <button class="tab" data-tab="settings">系统设置</button>
+    </div>
+
+    <!-- 概览 -->
+    <div class="tab-panel" data-panel="overview">
+      <div class="stat-grid" id="statGrid"></div>
+      <div id="pwdWarn"></div>
+
+      <div class="card">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap">
+          <div>
+            <h2 class="card-title" style="margin:0">样品总分排名</h2>
+            <p class="card-desc" style="margin:2px 0 0">按已提交评价员的样品总分均值排序</p>
+          </div>
+          <div style="margin-left:auto" class="btn-row">
+            <button class="btn btn-sm" id="dlSummary">导出本场统计汇总</button>
+            <button class="btn btn-sm btn-primary" id="dlRecords">导出本场原始数据</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th class="num">排名</th><th>样品编号</th><th class="num">总分均值</th>
+                <th class="num">标准差</th><th class="num">有效样本数</th>
+              </tr>
+            </thead>
+            <tbody id="rankTable"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card" id="outlierCard">
+        <h2 class="card-title">异常值提示</h2>
+        <p class="card-desc">个体总分偏离该样品全体均值 ±2 倍标准差，可按方案 6(4) 复核是否剔除（剔除规则须在试验记录中注明）</p>
+        <div id="outlierBox"></div>
+      </div>
+    </div>
+
+    <!-- 统计 -->
+    <div class="tab-panel hidden" data-panel="stats">
+      <div class="card">
+        <h2 class="card-title">各项指标得分（均值 ± 标准差）</h2>
+        <p class="card-desc">仅统计已提交的评价员数据，标准差为样本标准差（n−1）</p>
+        <div class="table-wrap">
+          <table id="statsTable"></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 数据分析 · ANOVA -->
+    <div class="tab-panel hidden" data-panel="analysis">
+      <div class="card">
+        <div class="analysis-head">
+          <div>
+            <h2 class="card-title" style="margin:0">数据分析</h2>
+            <p class="card-desc" style="margin:2px 0 0">
+              单因素方差分析（One-way ANOVA）＋ Duncan 新复极差法多重比较。同一指标下，<b>字母不同表示差异显著</b>（P&lt;α）。
+            </p>
+          </div>
+          <div class="analysis-tools">
+            <label class="alpha-field">
+              <span>显著性水平</span>
+              <select class="input" id="alphaSel">
+                <option value="0.05">α = 0.05</option>
+                <option value="0.01">α = 0.01</option>
+              </select>
+            </label>
+            <button class="btn btn-sm btn-primary" id="dlAnalysis">导出分析结果 CSV</button>
+          </div>
+        </div>
+        <div id="analysisWarn" style="margin-top:14px"></div>
+      </div>
+
+      <div class="card chart-card">
+        <div class="chart-head">
+          <div>
+            <h3 class="chart-title" id="chartTotalTitle">样品总分对比</h3>
+            <p class="chart-desc">柱高为均值，误差棒为标准差，字母为 Duncan 显著性分组</p>
+          </div>
+          <div class="chart-actions">
+            <button class="btn btn-sm" data-png="chartTotal">PNG</button>
+            <button class="btn btn-sm" data-svg="chartTotal">SVG</button>
+          </div>
+        </div>
+        <div class="chart-box" id="chartTotal"></div>
+      </div>
+
+      <div class="card chart-card">
+        <div class="chart-head">
+          <div>
+            <h3 class="chart-title">感官品质雷达图</h3>
+            <p class="chart-desc">各样品在 5 项指标上的得分（按各指标满分归一化）</p>
+          </div>
+          <div class="chart-actions">
+            <button class="btn btn-sm" data-png="chartRadar">PNG</button>
+            <button class="btn btn-sm" data-svg="chartRadar">SVG</button>
+          </div>
+        </div>
+        <div class="chart-box" id="chartRadar"></div>
+      </div>
+
+      <div class="card chart-card">
+        <div class="chart-head">
+          <div>
+            <h3 class="chart-title">各项指标得分率对比</h3>
+            <p class="chart-desc">各样品在每项指标上的得分占该项满分的百分比，便于跨指标比较</p>
+          </div>
+          <div class="chart-actions">
+            <button class="btn btn-sm" data-png="chartCriteria">PNG</button>
+            <button class="btn btn-sm" data-svg="chartCriteria">SVG</button>
+          </div>
+        </div>
+        <div class="chart-box" id="chartCriteria"></div>
+      </div>
+
+      <div class="card">
+        <h2 class="card-title">单因素方差分析表</h2>
+        <p class="card-desc">F 值越大、P 值越小，说明样品间差异越显著</p>
+        <div class="table-wrap"><table id="anovaTable"></table></div>
+      </div>
+
+      <div class="card">
+        <h2 class="card-title">描述统计</h2>
+        <p class="card-desc">均值、标准差、标准误、变异系数、极值等</p>
+        <div class="table-wrap" style="max-height:560px;overflow:auto"><table id="descTable"></table></div>
+      </div>
+
+      <div class="card">
+        <h2 class="card-title">Duncan 多重比较结果</h2>
+        <p class="card-desc">同一指标下，字母相同表示差异不显著，字母不同表示差异显著（P&lt;α）</p>
+        <div class="table-wrap" style="max-height:520px;overflow:auto"><table id="pairTable"></table></div>
+      </div>
+
+      <div class="card">
+        <h2 class="card-title">两两比较明细</h2>
+        <p class="card-desc">均值差 ≥ 临界极差 R 即判定为差异显著</p>
+        <div class="table-wrap" style="max-height:520px;overflow:auto"><table id="pairDetailTable"></table></div>
+      </div>
+    </div>
+
+    <!-- 原始记录 -->
+    <div class="tab-panel hidden" data-panel="records">
+      <div class="card">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap">
+          <div>
+            <h2 class="card-title" style="margin:0">原始评分记录</h2>
+            <p class="card-desc" style="margin:2px 0 0" id="recordCount">—</p>
+          </div>
+          <div style="margin-left:auto" class="btn-row">
+            <input class="input" id="recordFilter" placeholder="筛选评价员编号 / 样品编号" style="width:220px">
+            <button class="btn btn-sm" id="dlRecords2">导出 CSV</button>
+          </div>
+        </div>
+        <div class="table-wrap" style="max-height:620px;overflow:auto">
+          <table id="recordTable"></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 样品与评价员 -->
+    <div class="tab-panel hidden" data-panel="people">
+      <div class="card">
+        <h2 class="card-title">样品编码管理</h2>
+        <p class="card-desc">按方案要求采用三位数随机编码。修改后新加入的样品会自动追加到各评价员的评价顺序中。</p>
+        <div id="sampleRows"></div>
+        <div class="btn-row" style="margin-top:14px">
+          <button class="btn btn-sm" id="btnAddSample">+ 添加样品</button>
+          <button class="btn btn-sm" id="btnGenSample">随机生成编号</button>
+          <button class="btn btn-sm btn-primary" id="btnSaveSamples">保存样品列表</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 class="card-title">评价员进度</h2>
+        <p class="card-desc">共 <b id="evTotal">0</b> 人，已提交 <b id="evDone">0</b> 人</p>
+        <div class="table-wrap" style="max-height:520px;overflow:auto">
+          <table id="evTable"></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 设置 -->
+    <div class="tab-panel hidden" data-panel="settings">
+      <div class="card">
+        <h2 class="card-title">评价提示语</h2>
+        <p class="card-desc">显示在评分页顶部的操作提醒，对所有场次生效</p>
+        <textarea class="textarea" id="inputNotice" placeholder="评分提示语"></textarea>
+        <div class="btn-row" style="margin-top:14px">
+          <button class="btn btn-sm btn-primary" id="btnSaveBasic">保存设置</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 class="card-title">修改管理密码</h2>
+        <p class="card-desc" id="pwdModeDesc">建议首次部署后立即修改默认密码。</p>
+        <label class="field">
+          <span class="field-label">当前密码</span>
+          <input class="input" id="oldPwd" type="password" autocomplete="current-password">
+        </label>
+        <label class="field">
+          <span class="field-label">新密码（至少 6 位）</span>
+          <input class="input" id="newPwd" type="password" autocomplete="new-password">
+        </label>
+        <button class="btn btn-sm btn-primary" id="btnChangePwd">修改密码</button>
+      </div>
+
+      <div class="card">
+        <h2 class="card-title">评分标准编辑</h2>
+        <p class="card-desc">JSON 格式，保存后立即对评价员端生效。修改指标会同时影响所有场次的统计口径，请谨慎操作。</p>
+        <textarea class="textarea" id="inputCriteria" style="min-height:280px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px"></textarea>
+        <div class="btn-row" style="margin-top:14px">
+          <button class="btn btn-sm btn-primary" id="btnSaveCriteria">保存评分标准</button>
+          <button class="btn btn-sm" id="btnResetCriteria">恢复默认</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 class="card-title">数据管理</h2>
+        <p class="card-desc" id="dataDirDesc">数据以 JSON 文件保存在服务器 data 目录中，直接拷贝该目录即可完成备份。</p>
+        <div class="btn-row" style="margin-bottom:12px">
+          <button class="btn btn-sm" id="dlAll">导出全部场次原始数据</button>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-sm btn-danger" id="btnResetScores">清空本场评价数据</button>
+          <button class="btn btn-sm btn-danger" id="btnResetAll">清空本场数据与样品</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div id="modalRoot"></div>
+
+<script src="/js/charts.js"></script>
+<script src="/js/admin.js"></script>
+</body>
+</html>

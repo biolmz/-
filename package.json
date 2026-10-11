@@ -1,0 +1,17 @@
+{
+  "name": "sensory-evaluation-system",
+  "version": "1.0.0",
+  "private": true,
+  "description": "感官评价线上评分系统（评价员端 + 管理端），零第三方依赖",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "seed-demo": "node tools/seed-demo.js",
+    "clear-demo": "node tools/seed-demo.js --clear"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT"
+}
